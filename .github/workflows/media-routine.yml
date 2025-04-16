@@ -1,4 +1,4 @@
-name: TVScraper Daily
+name: media-routine Daily
 
 on:
   schedule:
