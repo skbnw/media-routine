@@ -1,9 +1,9 @@
-name:  Scraper Daily
+name: TVScraper Daily
 
 on:
   schedule:
     - cron: '0 19 * * *'  # 日本時間の毎朝4時（UTC 19:00）
-  workflow_dispatch:       # 手動実行も可
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -26,3 +26,16 @@ jobs:
       - name: Run scraper
         run: |
           python scraper.py
+
+      - name: Upload scraped results
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraped-files
+          path: |
+            ./files/
+
+      - name: Upload error log
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-log
+          path: error_log.txt
