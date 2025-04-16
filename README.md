@@ -1,7 +1,7 @@
-media-routine/
-├── scraper.py                
-├── requirements.txt          
-├── error_log.txt             
-└── .github/
-    └── workflows/
-        └── media-routine.yml ← GitHub Actionsワークフロー
+media-routine/<br>
+├── scraper.py<br>                
+├── requirements.txt<br>          
+├── error_log.txt<br>             
+└── .github/<br>
+    └── workflows/<br>
+        └── media-routine.yml ← GitHub Actionsワークフロー<br>
