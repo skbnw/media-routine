@@ -1,6 +1,6 @@
 media-routine/<br>
 ├── scraper.py<br>
-├── requirements.txt<br>       
+├── requirements.txt<br>
 ├── error_log.txt<br>
 └── .github/<br>
     └── workflows/<br>
