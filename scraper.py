@@ -33,6 +33,9 @@ options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 driver = webdriver.Chrome(options=options)
 
+def format_time(t):
+    return f"{t[:4]}-{t[4:6]}-{t[6:8]}_{t[8:10]}{t[10:12]}"
+
 try:
     for i in range((end_date - start_date).days + 1):
         target_date = start_date + timedelta(days=i)
@@ -96,8 +99,11 @@ try:
                 if ul_element:
                     programs = ul_element.find_all("li")
                     for program in programs:
-                        start_time = str(program.get("s", ""))
-                        end_time = str(program.get("e", ""))
+                        start_raw = str(program.get("s", ""))
+                        end_raw = str(program.get("e", ""))
+                        start_time = format_time(start_raw)
+                        end_time = format_time(end_raw)
+
                         a_tag = program.find("a", class_="title_link")
                         channel_id = ul_id
                         channel_name = channel_name_map.get(ul_id, ul_id)
