@@ -1,4 +1,4 @@
-name: media-routine Daily
+name: media-routine-daily
 
 on:
   schedule:
