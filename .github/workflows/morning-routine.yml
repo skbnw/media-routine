@@ -3,7 +3,7 @@ name: morning-routine-daily
 on:
   schedule:
     - cron: '0 19 * * *'  # JST 04:00 実行（UTC 19:00）
-  workflow_dispatch:       # 手動実行も可能
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -23,9 +23,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Get timestamp
+      - name: Get timestamp in JST
         id: timestamp
-        run: echo "time=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+        run: |
+          TZ=Asia/Tokyo date +'%Y%m%d-%H%M' > time.txt
+          echo "time=$(cat time.txt)" >> $GITHUB_OUTPUT
 
       - name: Run scraper script
         run: python morning-routine.py
