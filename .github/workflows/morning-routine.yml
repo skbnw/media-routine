@@ -45,3 +45,9 @@ jobs:
         with:
           name: error-log
           path: error_log.txt
+
+      - name: Upload diff log
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-log
+          path: diff_detected.log
