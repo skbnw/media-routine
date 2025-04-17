@@ -1,4 +1,4 @@
-name: media-routine-daily
+name: morning-routine-daily
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Run scraper
         run: |
-          python scraper.py
+          python morning-routine.py
 
       - name: Upload scraped results
         uses: actions/upload-artifact@v4
