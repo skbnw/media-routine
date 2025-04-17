@@ -1,5 +1,6 @@
 import os
 import time
+import sqlite3
 from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -21,6 +22,9 @@ channels = {
 
 # ベース保存ディレクトリ
 base_dir = "./files"
+db_dir = "./database"
+os.makedirs(db_dir, exist_ok=True)
+db_path = os.path.join(db_dir, "programs.sqlite")
 
 # エラーログパス
 error_log_path = "error_log.txt"
@@ -33,8 +37,42 @@ options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 driver = webdriver.Chrome(options=options)
 
+# SQLiteの初期化
+def init_db():
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS programs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            channel_id TEXT,
+            channel_name TEXT,
+            start_time TEXT,
+            end_time TEXT,
+            program_title TEXT,
+            program_detail TEXT,
+            link TEXT,
+            UNIQUE(channel_id, start_time, program_title)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# データをSQLiteに保存
+def save_to_db(rows):
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    for row in rows:
+        cur.execute('''
+            INSERT OR REPLACE INTO programs (channel_id, channel_name, start_time, end_time, program_title, program_detail, link)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', row)
+    conn.commit()
+    conn.close()
+
 def format_time(t):
     return f"{t[:4]}-{t[4:6]}-{t[6:8]}_{t[8:10]}{t[10:12]}"
+
+init_db()
 
 try:
     for i in range((end_date - start_date).days + 1):
@@ -91,6 +129,7 @@ try:
                 channel_name_map[ul_id] = channel_name
 
             csv_data = [["channel_id", "channel_name", "start_time", "end_time", "program_title", "program_detail", "link"]]
+            db_rows = []
             program_count = 0
 
             for j in range(1, 13):
@@ -118,7 +157,9 @@ try:
                                 detail = detail_element.text.strip()
                             link = a_tag.get("href", "")
 
-                        csv_data.append([channel_id, channel_name, start_time, end_time, title, detail, link])
+                        row = [channel_id, channel_name, start_time, end_time, title, detail, link]
+                        csv_data.append(row)
+                        db_rows.append(row)
                         program_count += 1
                 else:
                     print(f"  ℹ️ {ul_id} が見つかりません")
@@ -143,7 +184,11 @@ try:
                 csvwriter = csv.writer(csvfile)
                 csvwriter.writerows(csv_data)
 
+            # SQLite保存
+            save_to_db(db_rows)
+
             print(f"  ✅ CSV保存完了: {csv_path}")
+            print(f"  ✅ DB保存完了: {db_path}")
             print("=" * 50)
 
 finally:
