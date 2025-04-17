@@ -29,11 +29,11 @@ jobs:
           name: scraped-files
           path: previous_run
 
-      - name: Run scraper
+      - name: Run morning scraper
         run: |
           python morning-routine.py
 
-      - name: Upload scraped results
+      - name: Upload scraped files
         uses: actions/upload-artifact@v4
         with:
           name: scraped-files
