@@ -11,7 +11,7 @@ import pandas as pd
 
 # 実行日と対象日範囲
 today = datetime.today()
-start_date = today - timedelta(days=7)
+start_date = today - timedelta(days=1)
 end_date = today + timedelta(days=7)
 
 # チャンネル種別とURL
@@ -23,12 +23,17 @@ channels = {
 # ベース保存ディレクトリ
 base_dir = "./files"
 db_dir = "./database"
+previous_dir = "./previous_run"
 os.makedirs(db_dir, exist_ok=True)
 db_path = os.path.join(db_dir, "programs.sqlite")
 
 # エラーログパス
 error_log_path = "error_log.txt"
 open(error_log_path, "a").close()
+
+# 差分検知ログパス
+diff_detected_path = "diff_detected.log"
+open(diff_detected_path, "a").close()
 
 # Chromeドライバー設定
 options = Options()
@@ -51,6 +56,9 @@ def init_db():
             program_title TEXT,
             program_detail TEXT,
             link TEXT,
+            is_confirmed INTEGER DEFAULT 0,
+            is_changed INTEGER DEFAULT 0,
+            last_updated TEXT,
             UNIQUE(channel_id, start_time, program_title)
         )
     ''')
@@ -61,11 +69,15 @@ def init_db():
 def save_to_db(rows):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+    now = datetime.now().isoformat()
     for row in rows:
         cur.execute('''
-            INSERT OR REPLACE INTO programs (channel_id, channel_name, start_time, end_time, program_title, program_detail, link)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', row)
+            INSERT OR REPLACE INTO programs (
+                channel_id, channel_name, start_time, end_time, 
+                program_title, program_detail, link, 
+                is_confirmed, is_changed, last_updated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', row + [0, 0, now])
     conn.commit()
     conn.close()
 
@@ -90,6 +102,7 @@ try:
             html_path = os.path.join(html_dir, f"{ch_key}_{date_str}.html")
             csv_path = os.path.join(csv_dir, f"{ch_key}_{date_str}_programs.csv")
             diff_path = csv_path.replace(".csv", "_diff.csv")
+            prev_csv_path = os.path.join(previous_dir, ch_key, "csv", subfolder, f"{ch_key}_{date_str}_programs.csv")
 
             print("=" * 50)
             print(f"[{ch_key.upper()}] {date_str} → アクセス中: {url}")
@@ -169,15 +182,17 @@ try:
                 with open(error_log_path, "a", encoding="utf-8") as log:
                     log.write(f"{datetime.now()} - {ch_key}_{date_str} - 番組数異常: {program_count}\n")
 
-            # 差分チェック
+            # 差分チェック（前回Artifactと比較）
             new_df = pd.DataFrame(csv_data[1:], columns=csv_data[0])
-            if os.path.exists(csv_path):
-                old_df = pd.read_csv(csv_path)
+            if os.path.exists(prev_csv_path):
+                old_df = pd.read_csv(prev_csv_path)
                 merged = pd.merge(new_df, old_df, how='outer', indicator=True)
                 diff = merged[merged['_merge'] != 'both']
                 if not diff.empty:
                     diff.to_csv(diff_path, index=False, encoding='utf-8-sig')
                     print(f"  🔄 差分検知: {len(diff)}件 → {diff_path} に保存")
+                    with open(diff_detected_path, "a", encoding="utf-8") as log:
+                        log.write(f"{datetime.now()} - {ch_key}_{date_str} - 差分あり\n")
 
             # CSV保存
             with open(csv_path, "w", encoding="utf-8-sig", newline="") as csvfile:
