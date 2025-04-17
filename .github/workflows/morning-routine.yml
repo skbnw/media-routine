@@ -1,16 +1,16 @@
-name: media-routine-daily
+name: morning-routine-daily
 
 on:
   schedule:
-    - cron: '0 19 * * *'  # JST 4:00 実行（UTC 19:00）
-  workflow_dispatch:       # 手動実行も可
+    - cron: '0 19 * * *'  # JST 04:00 実行（UTC 19:00）
+  workflow_dispatch:       # 手動実行も可能
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -23,27 +23,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run scraper
-        run: |
-          python morning-routine.py
+      - name: Get timestamp
+        id: timestamp
+        run: echo "time=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
-      - name: Upload scraped results
+      - name: Run scraper script
+        run: python morning-routine.py
+
+      - name: Upload scraped files
         uses: actions/upload-artifact@v4
         with:
           name: scraped-files_${{ steps.timestamp.outputs.time }}
           path: ./files/
 
-      - name: Upload error log if exists
+      - name: Upload error log (if exists)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: error-log
           path: error_log.txt
           if-no-files-found: ignore
-
-    outputs:
-      time: ${{ steps.timestamp.outputs.time }}
-
-    steps:
-      - id: timestamp
-        run: echo "time=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
